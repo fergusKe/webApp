@@ -463,23 +463,7 @@
 		</div>
 			<div id="fiction_chapter_title"></div>
 			<div id="fiction_container" class="m-read-content">
-				<h4>第004章 绝处逢生？</h4>
-				<p>从朱莉家出来后，盛夏在招待所将就了一夜。闺蜜小雅想让盛夏住她家去，但盛夏没同意。</p>
-				<p>小雅和她男朋友挤在一个二十多平的一室户里，就算能挪出地方来给她，两个女的，一个男的，也太不方便。</p>
-				<p>盛夏无奈之下，就搬到了自己打临时工的超市。</p>
-				<p>这家超市是西林本土的一家小型连锁店。店面铺得广，员工又多，提供住的地方，所以工资不高。</p>
-				<p>从朱莉家出来后，盛夏在招待所将就了一夜。闺蜜小雅想让盛夏住她家去，但盛夏没同意。</p>
-				<p>小雅和她男朋友挤在一个二十多平的一室户里，就算能挪出地方来给她，两个女的，一个男的，也太不方便。</p>
-				<p>盛夏无奈之下，就搬到了自己打临时工的超市。</p>
-				<p>这家超市是西林本土的一家小型连锁店。店面铺得广，员工又多，提供住的地方，所以工资不高。</p>
-				<p>从朱莉家出来后，盛夏在招待所将就了一夜。闺蜜小雅想让盛夏住她家去，但盛夏没同意。</p>
-				<p>小雅和她男朋友挤在一个二十多平的一室户里，就算能挪出地方来给她，两个女的，一个男的，也太不方便。</p>
-				<p>盛夏无奈之下，就搬到了自己打临时工的超市。</p>
-				<p>这家超市是西林本土的一家小型连锁店。店面铺得广，员工又多，提供住的地方，所以工资不高。</p>
-				<p>从朱莉家出来后，盛夏在招待所将就了一夜。闺蜜小雅想让盛夏住她家去，但盛夏没同意。</p>
-				<p>小雅和她男朋友挤在一个二十多平的一室户里，就算能挪出地方来给她，两个女的，一个男的，也太不方便。</p>
-				<p>盛夏无奈之下，就搬到了自己打临时工的超市。</p>
-				<p>这家超市是西林本土的一家小型连锁店。店面铺得广，员工又多，提供住的地方，所以工资不高。</p>
+				
 			</div>
 			<div class="m-button-bar" id="bottom_tool_bar" style="padding-bottom: 70px;">
 				<ul class="u-tab" id="bottom_tool_bar_ul">
@@ -585,7 +569,7 @@
 							success: function(result) {
 								var data = $.base64.decode(result);
 								var json = decodeURIComponent(escape(data));
-								callback(data);
+								callback(json);
 							}
 						})
 					}
@@ -623,16 +607,19 @@
 				function main() {
 					// 整個項目的入口函數
 					var readerModel = ReaderModel();
-					readerModel.init();
+					var readerUI = ReaderBaseFrame(RootContainer);
+					readerModel.init(function(data) {
+						readerUI(data);
+					});
 					EventHanlder();
 				}
 				function ReaderModel() {
 					// 實現和閱讀器相關的數據交互方法
 					var Chapter_id;
-					var init = function() {
+					var init = function(UIcallback) {
 						getFictionInfo(function() {
-							getCurChapterContent(Chapter_id, function() {
-
+							getCurChapterContent(Chapter_id, function(data) {
+								UIcallback && UIcallback(data);
 							});
 						})
 					}
@@ -643,7 +630,7 @@
 							callback && callback();
 						}, 'json');
 					}
-					var getCurChapterContent = function(chapter_id, data) {
+					var getCurChapterContent = function(chapter_id, callback) {
 						$.get('data/data' + chapter_id + '.json', function(data) {
 							if (data.result == 0) {
 								var url = data.jsonp;
@@ -657,8 +644,23 @@
 						init: init
 					}
 				}
-				function ReaderBaseFrame() {
+				function ReaderBaseFrame(container) {
 					// 渲染基本的UI結構
+					console.log('container = ', container);
+					function parseChapterData(jsonData) {
+						console.log('jsonData = ', jsonData);
+						var jsonObj = JSON.parse(jsonData);
+						var html = "<h4>" + jsonObj.t + "</h4>";
+						for (var i = 0; i < jsonObj.p.length; i++) {
+							html += "<p>" + jsonObj.p[i] + "</p>";
+						}
+						return html;
+					}
+
+					return function(data) {
+						console.log('data = ', data);
+						container.html(parseChapterData(data));
+					};
 				}
 				function EventHanlder() {
 					// 交互的事件綁定
