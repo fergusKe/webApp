@@ -561,12 +561,6 @@
 					var StorageSetter = function(key, val) {
 						return localStorage.setItem(prefix + key,val);
 					}
-					var ChapterGetter = function(key) {
-						return localStorage.getItem(prefix + key);
-					}
-					var ChapterSetter = function(key, val) {
-						return localStorage.setItem(prefix + key, val);
-					}
 					var getBSONP = function(url, callback) {
 						return $.jsonp({
 							url: url,
@@ -583,8 +577,6 @@
 						getBSONP: getBSONP,
 						StorageGetter: StorageGetter,
 						StorageSetter: StorageSetter,
-						ChapterGetter: ChapterGetter,
-						ChapterSetter: ChapterSetter
 					}
 				})();
 
@@ -603,16 +595,10 @@
 				var readerUI;
 				var RootContainer = $('#fiction_container');
 				var initFontSize = Util.StorageGetter('font_size');
-				var initChapter =  Util.ChapterGetter('chapter_id');
 				initFontSize = parseInt(initFontSize, 10);
 				if (!initFontSize) {
 					initFontSize = 14;
 				}
-				initChapter = parseInt(initChapter, 10);
-				if (!initChapter) {
-					initChapter = 1;
-				}
-				// console.log('initChapter = ', initChapter);
 				RootContainer.css('font-size', initFontSize);
 				var initDataColor = Util.StorageGetter('data_color');
 				if (!initDataColor) {
@@ -643,7 +629,10 @@
 					var getFictionInfo = function(callback) {
 						$.get('data/chapter.json', function(data) {
 							// 獲得章節信息之後的回調
-							Chapter_id = initChapter;
+							Chapter_id = Util.StorageGetter('last_chapter_id');
+							if (Chapter_id == null) {
+								Chapter_id = data.chapters[1].chapter_id;
+							}
 							ChapterTotal = data.chapters.length;
 							callback && callback();
 						}, 'json');
@@ -666,7 +655,7 @@
 						}
 						Chapter_id -= 1;
 						getCurChapterContent(Chapter_id, UIcallback);
-						Util.ChapterSetter('chapter_id', Chapter_id);
+						Util.StorageSetter('last_chapter_id', Chapter_id);
 					}
 					var nextChapter = function(UIcallback) {
 						Chapter_id = parseInt(Chapter_id, 10);
@@ -675,8 +664,7 @@
 						}
 						Chapter_id += 1;
 						getCurChapterContent(Chapter_id, UIcallback);
-						Util.ChapterSetter('chapter_id', Chapter_id);
-						console.log('Chapter_id = ', Chapter_id);
+						Util.StorageSetter('last_chapter_id', Chapter_id);
 					}
 					return {
 						init: init,
