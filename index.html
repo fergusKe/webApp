@@ -591,6 +591,8 @@
 				};
 				var Win = $(window);
 				var Doc = $(document);
+				var readerModel;
+				var readerUI;
 				var RootContainer = $('#fiction_container');
 				var initFontSize = Util.StorageGetter('font_size');
 				initFontSize = parseInt(initFontSize, 10);
@@ -606,8 +608,8 @@
 
 				function main() {
 					// 整個項目的入口函數
-					var readerModel = ReaderModel();
-					var readerUI = ReaderBaseFrame(RootContainer);
+					readerModel = ReaderModel();
+					readerUI = ReaderBaseFrame(RootContainer);
 					readerModel.init(function(data) {
 						readerUI(data);
 					});
@@ -616,6 +618,7 @@
 				function ReaderModel() {
 					// 實現和閱讀器相關的數據交互方法
 					var Chapter_id;
+					var ChapterTotal;
 					var init = function(UIcallback) {
 						getFictionInfo(function() {
 							getCurChapterContent(Chapter_id, function(data) {
@@ -627,6 +630,7 @@
 						$.get('data/chapter.json', function(data) {
 							// 獲得章節信息之後的回調
 							Chapter_id = data.chapters[1].chapter_id;
+							ChapterTotal = data.chapters.length;
 							callback && callback();
 						}, 'json');
 					}
@@ -635,20 +639,38 @@
 							if (data.result == 0) {
 								var url = data.jsonp;
 								Util.getBSONP(url, function(data) {
+									// if(callback){ callback() }
 									callback && callback(data);
 								});
 							}
 						}, 'json');
 					}
+					var prevChapter = function(UIcallback) {
+						Chapter_id = parseInt(Chapter_id, 10);
+						if (Chapter_id == 0) {
+							return
+						}
+						Chapter_id -= 1;
+						getCurChapterContent(Chapter_id, UIcallback);
+					}
+					var nextChapter = function(UIcallback) {
+						Chapter_id = parseInt(Chapter_id, 10);
+						if (Chapter_id == ChapterTotal) {
+							return
+						}
+						Chapter_id += 1;
+						getCurChapterContent(Chapter_id, UIcallback);
+					}
 					return {
-						init: init
+						init: init,
+						prevChapter: prevChapter,
+						nextChapter: nextChapter
 					}
 				}
 				function ReaderBaseFrame(container) {
 					// 渲染基本的UI結構
-					console.log('container = ', container);
 					function parseChapterData(jsonData) {
-						console.log('jsonData = ', jsonData);
+						// console.log('jsonData = ', jsonData);
 						var jsonObj = JSON.parse(jsonData);
 						var html = "<h4>" + jsonObj.t + "</h4>";
 						for (var i = 0; i < jsonObj.p.length; i++) {
@@ -658,7 +680,7 @@
 					}
 
 					return function(data) {
-						console.log('data = ', data);
+						// console.log('data = ', data);
 						container.html(parseChapterData(data));
 					};
 				}
@@ -717,6 +739,15 @@
 						Dom.top_nav.hide();
 						Dom.font_container.hide();
 						Dom.font_button.removeClass('current');
+					});
+					$('#prev_button').click(function() {
+						// 獲得章節的翻頁數據 => 把數據拿出來渲染
+						readerModel.prevChapter();
+					});
+					$('#next_button').click(function() {
+						readerModel.nextChapter(function(data) {
+							readerUI(data);
+						});
 					});
 				}
 
